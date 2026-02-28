@@ -1,0 +1,21 @@
+{
+  "name": "sqlite-memory",
+  "version": "1.0.0",
+  "description": "SQLite Memory System with Vector Search for AI Agents",
+  "main": "memory.js",
+  "scripts": {
+    "start": "node memory.js",
+    "test": "node test.js"
+  },
+  "dependencies": {
+    "better-sqlite3": "^9.4.3"
+  },
+  "keywords": [
+    "memory",
+    "sqlite",
+    "vector",
+    "ai",
+    "embedding"
+  ],
+  "license": "MIT"
+}
