@@ -1,92 +1,139 @@
-# SQLite Memory System
+# SQLite Memory System / SQLite 向量记忆系统
 
-SQLite-based memory system with vector search for AI agents. Supports semantic search, access frequency tracking, and daily memory activation.
+[English](#english) | [中文](#中文)
 
-## Features
+---
 
-- **Vector Search**: Hash-based embeddings for semantic similarity search
-- **Frequency Tracking**: Tracks memory access count for smart ranking
-- **Daily Reset**: Automatic daily reset at 7 AM with memory reactivation
-- **Health Check**: Automatic health monitoring every 8 hours
-- **Real-time Sync**: Automatic sync between MEMORY.md and SQLite
+## English
 
-## Quick Start
+### What is this?
 
-### 1. Install Dependencies
+A SQLite-based memory system with vector search for AI agents. Built for [OpenClaw](https://github.com/openclaw/openclaw), but works with any AI system.
+
+### Problem Solved
+
+1. **Memory Fragmentation**: AI conversations are stored in separate MD files, hard to search
+2. **Slow Search**: Text matching is inefficient for semantic queries
+3. **No Prioritization**: Frequently used memories should appear first
+4. **No Daily Activation**: Old memories get forgotten over time
+
+### Solution
+
+- **SQLite Storage**: Fast, reliable, single file database
+- **Vector Search**: Hash-based embeddings for semantic similarity
+- **Access Frequency**: Tracks how often each memory is used
+- **Daily Reset**: Reactivates all memories every morning at 7 AM
+
+### Features
+
+- ✅ Vector similarity search (100-dim hash embeddings)
+- ✅ Access frequency tracking & smart ranking
+- ✅ Automatic daily reset at 7 AM
+- ✅ Health check every 8 hours
+- ✅ Real-time sync between MEMORY.md and SQLite
+- ✅ RESTful API
+
+### Quick Start
 
 ```bash
+# 1. Install
 cd sqlite-memory
 npm install
-```
 
-### 2. Configure Memory Directory
-
-```bash
-export MEMORY_DIR=/root/.openclaw/workspace/memory
-mkdir -p $MEMORY_DIR
-```
-
-### 3. Initialize Database
-
-```bash
-# Create initial MEMORY.md if not exists
-touch /root/.openclaw/workspace/MEMORY.md
-
-# Run migration
+# 2. Initialize
 python3 migrate.py
-```
 
-### 4. Start Server
-
-```bash
-# Production
+# 3. Start server
 node memory.js &
 
-# Or with custom port
-PORT=3456 node memory.js
-```
-
-### 5. Test
-
-```bash
-npm test
-# or
+# 4. Test
 curl http://127.0.0.1:3456/list
 ```
 
-## API Endpoints
+### API
 
 | Endpoint | Description |
 |----------|-------------|
-| `GET /` | List all endpoints |
 | `GET /list` | List all memories |
-| `GET /all` | Get all memories as JSON |
-| `GET /get?key=xxx` | Get single memory |
-| `GET /set?key=xxx&value=xxx` | Set memory |
 | `GET /search?q=xxx` | Keyword search |
 | `GET /vsearch?q=xxx` | Vector similarity search |
-| `GET /frequent` | Get most accessed memories |
-| `GET /reset-daily` | Reset daily access counts |
+| `GET /frequent` | Most accessed memories |
+| `GET /reset-daily` | Reset daily counts |
 
-## Deployment
+### Deployment
 
-### Systemd Service
+See [Deployment Guide](README.md#deployment) for:
+- Systemd service
+- Cron jobs
+- Nginx reverse proxy
 
-Create `/etc/systemd/system/sqlite-memory.service`:
+---
+
+## 中文
+
+### 这是什么？
+
+基于 SQLite 的 AI 记忆系统，支持向量搜索。为 [OpenClaw](https://github.com/openclaw/openclaw) 设计，也可用于其他 AI 系统。
+
+### 解决什么问题？
+
+| 痛点 | 解决方案 |
+|------|----------|
+| 记忆分散在多个 MD 文件 | 统一存储到 SQLite |
+| 关键词搜索太慢 | 向量相似度搜索 |
+| 常用记忆没有权重 | 访问频次跟踪 |
+| 旧记忆逐渐被遗忘 | 每天早上重新激活 |
+
+### 核心功能
+
+- ✅ **向量搜索**: 基于哈希的 100 维向量，语义相似度匹配
+- ✅ **频次跟踪**: 记录每条记忆的访问次数，搜索结果加权
+- ✅ **每日重置**: 每天早上 7 点重置频次，重新激活所有记忆
+- ✅ **健康检查**: 每 8 小时自动检查系统状态
+- ✅ **实时同步**: MEMORY.md 与 SQLite 自动双向同步
+- ✅ **RESTful API**: 简单易用的 HTTP 接口
+
+### 快速开始
+
+```bash
+# 1. 安装依赖
+cd sqlite-memory
+npm install
+
+# 2. 初始化数据库
+python3 migrate.py
+
+# 3. 启动服务
+node memory.js &
+
+# 4. 测试
+curl http://127.0.0.1:3456/list
+```
+
+### API 接口
+
+| 接口 | 说明 |
+|------|------|
+| `GET /list` | 列出所有记忆 |
+| `GET /search?q=xxx` | 关键词搜索 |
+| `GET /vsearch?q=xxx` | 向量相似度搜索 |
+| `GET /frequent` | 获取高频记忆 |
+| `GET /reset-daily` | 重置每日计数 |
+
+### 部署
+
+#### Systemd 服务
 
 ```ini
 [Unit]
 Description=SQLite Memory Server
-After=network.target
 
 [Service]
 Type=simple
-User=root
-WorkingDirectory=/root/.openclaw/workspace/sqlite-memory
-ExecStart=/usr/bin/node /root/.openclaw/workspace/sqlite-memory/memory.js
+ExecStart=/usr/bin/node /path/to/sqlite-memory/memory.js
 Restart=always
-Environment=MEMORY_DIR=/root/.openclaw/workspace/memory
 Environment=PORT=3456
+Environment=MEMORY_DIR=/path/to/memory
 
 [Install]
 WantedBy=multi-user.target
@@ -98,64 +145,42 @@ sudo systemctl enable sqlite-memory
 sudo systemctl start sqlite-memory
 ```
 
-### Cron Jobs
-
-Add to crontab (`crontab -e`):
+#### Cron 定时任务
 
 ```crontab
-# Health check every 8 hours
-0 */8 * * * /root/.openclaw/workspace/sqlite-memory/scripts/health_check.sh >> /var/log/sqlite_memory_health.log 2>&1
+# 健康检查 (每8小时)
+0 */8 * * * /path/to/sqlite-memory/scripts/health_check.sh >> /var/log/sqlite_memory_health.log 2>&1
 
-# Daily reset at 7 AM
-0 7 * * * /root/.openclaw/workspace/sqlite-memory/scripts/daily_reset.sh >> /root/.openclaw/workspace/memory/daily_reset.log 2>&1
-
-# Real-time sync (optional, runs continuously)
-# 0 * * * * /root/.openclaw/workspace/sqlite-memory/scripts/realtime_sync.sh &
+# 每日重置 (早7点)
+0 7 * * * /path/to/sqlite-memory/scripts/daily_reset.sh >> /var/log/sqlite_memory_daily.log 2>&1
 ```
 
-## Configuration
-
-### Environment Variables
-
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `MEMORY_DIR` | `/root/.openclaw/workspace/memory` | Memory directory |
-| `PORT` | `3456` | HTTP server port |
-| `MEMORY_DB` | `$MEMORY_DIR/memories.db` | SQLite database path |
-
-### Directory Structure
+### 目录结构
 
 ```
-/root/.openclaw/workspace/
-├── memory/
-│   ├── memories.db      # SQLite database
-│   ├── all.json        # JSON backup
-│   ├── MEMORY.md       # Main memory file
-│   └── 2026-*.md       # Daily memory files
-└── sqlite-memory/
-    ├── memory.js       # HTTP server
-    ├── migrate.py      # Migration script
-    ├── package.json
-    └── scripts/
-        ├── health_check.sh
-        ├── daily_reset.sh
-        └── realtime_sync.sh
+sqlite-memory/
+├── memory.js          # HTTP 服务器
+├── migrate.py         # 记忆迁移脚本
+├── package.json       # 依赖配置
+├── scripts/
+│   ├── health_check.sh   # 健康检查
+│   ├── daily_reset.sh    # 每日重置
+│   └── realtime_sync.sh  # 实时同步
+└── README.md
 ```
 
-## Vector Search
+### 环境变量
 
-The system uses hash-based embeddings for similarity search:
+| 变量 | 默认值 | 说明 |
+|------|--------|------|
+| `PORT` | 3456 | HTTP 服务端口 |
+| `MEMORY_DIR` | /root/.openclaw/workspace/memory | 记忆目录 |
+| `MEMORY_DB` | $MEMORY_DIR/memories.db | 数据库路径 |
 
-- 100-dimensional vectors
-- MD5 n-gram hashing
-- Cosine similarity
-- Access count boosting
+### License
 
-```bash
-# Vector search example
-curl "http://127.0.0.1:3456/vsearch?q=龙助理"
-```
+MIT - 完全开源，免费使用
 
-## License
+---
 
-MIT
+Built for [OpenClaw](https://github.com/openclaw/openclaw)
